@@ -115,21 +115,25 @@ void timeTreeContraction(intT* nodes, internalNode* internal, intT n, int rounds
   intT* nodesCopy = newA(intT,n);
   internalNode* internalCopy = newA(internalNode,n-1);
   internalNode* internalCopyO = internalCopy - n;
-  parallel_for(intT i=0;i<n;i++) nodesCopy[i] = nodes[i];
-  parallel_for(intT i=0;i<n-1;i++) {
+  parallel_for(0, n, [&](size_t i){
+    nodesCopy[i] = nodes[i];
+  });
+  parallel_for(0, n-1, [&](size_t i){
     internalCopy[i].parent = internal[n+i].parent;
     internalCopy[i].leftChild = internal[n+i].leftChild;
     internalCopy[i].rightChild = internal[n+i].rightChild;
-  }
+  });
   treeContraction(nodesCopy, internalCopyO, n, ratio);
   double time=0;
-  for (int i=0; i < rounds; i++) {
-    parallel_for(intT i=0;i<n;i++) nodesCopy[i] = nodes[i];
-    parallel_for(intT i=0;i<n-1;i++) {
+  for (int j = 0; j < rounds; j++) {
+    parallel_for(0, n, [&](size_t i){
+      nodesCopy[i] = nodes[i];
+    });
+    parallel_for(0, n-1, [&](size_t i){
       internalCopy[i].parent = internal[n+i].parent;
       internalCopy[i].leftChild = internal[n+i].leftChild;
       internalCopy[i].rightChild = internal[n+i].rightChild;
-    }
+    });
     timer t; t.start();
     treeContraction(nodesCopy, internalCopyO, n, ratio);
     t.stop();
@@ -155,12 +159,18 @@ int main(int argc, char* argv[]) {
   } else {
     intT n = atoi(P.getArgument(0));
     intT* nodes = newA(intT,n);
-    parallel_for(intT i=0;i<n;i++) nodes[i] = -1;
+    parallel_for(0, n, [&](size_t i){
+      nodes[i] = -1;
+    });
     internalNode* internal = newA(internalNode,n-1);
-    parallel_for(intT i=0;i<n-1;i++) internal[i].parent = -1;
+    parallel_for(0, n-1, [&](size_t i){
+      internal[i].parent = -1;
+    });
 
     intT* IDs = newA(intT,2*n-1);
-    parallel_for(intT i=0;i<2*n-1;i++) IDs[i] = i;
+    parallel_for(0, 2*n-1, [&](size_t i){
+      IDs[i] = i;
+    });
     intT* newIDs = newA(intT,2*n-1);
 
     //internalNode* internal = newA(internalNode,n-1);
