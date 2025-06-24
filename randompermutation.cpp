@@ -2,14 +2,12 @@
 #include <iostream>
 #include <cstdio>
 #include <stdlib.h>
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 #include "get_time.h"
 #include "sequence.h"
 #include<utility>
 #include<mutex>
 #include<cassert>
-//#include "parallel.h"
+#include "parallel.h"
 //#include "utils.h"
 #include "math.h"
 #include "parallel_hashmap/phmap.h"
@@ -71,7 +69,7 @@ void PKS(long long * A, pair<long long,long long> * H, long long n){
         //std::cout<<size<<std::endl;
         pair<long long ,long long > *sH=H+start;
         
-        cilk_for(long long j=0;j<size;j++){
+        parallel_for(0, size, [&](size_t j) {
             assert(start+j<n);
 
             pair<long long ,long long > swp=sH[j];
@@ -100,9 +98,9 @@ void PKS(long long * A, pair<long long,long long> * H, long long n){
 
 
 
-        }
+        });
         //int a=0;
-        cilk_for(long long j=0;j<size;j++){
+        parallel_for(0, size, [&](size_t j) {
             assert(start+j<n);
             pair<long long ,long long > swp=sH[j];
             long long i=swp.first;
@@ -119,7 +117,7 @@ void PKS(long long * A, pair<long long,long long> * H, long long n){
             }
 
 
-        }
+        });
         //std::cout<<a<<std::endl;
         R.clear();
         
@@ -127,9 +125,9 @@ void PKS(long long * A, pair<long long,long long> * H, long long n){
         long long failednum=sequence::filter(sH,filter_res,size,pred);
         std::cout<<failednum<<std::endl;
         rest_swaps=rest_swaps-size+failednum;
-        cilk_for(long long j=0;j<failednum;j++){
+        parallel_for(0, failednum, [&](size_t j) {
             sH[j]=filter_res[j];
-        }
+        });
         
         //rest_swaps=rest_swaps-size;
        // break;
@@ -168,12 +166,12 @@ int main(int argc,char ** argv){
     double time=0;
     //long long s=0;
     for(int i=0;i<total_times;i++){
-        cilk_for(long long j=0;j<n;j++) {
+        parallel_for(0, n, [&](size_t j) {
             A[j]=j;
            // H[j]=make_pair(j,j+hashI<long long >(j)%(n-j));
             H[j]=make_pair(j,(j+200000)%n);
 
-        }
+        });
        
         //cilk_for(long long j=0;j<n;j++) mf[j]=0;
         timer t; t.start();

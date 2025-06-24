@@ -1,11 +1,10 @@
 #include <iostream>
 #include <cstdio>
 #include <stdlib.h>
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 #include "gettime.h"
 #include "sequence.h"
 #include "math.h"
+#include "parallel.h"
 
 int main(int argc, char ** argv) {
 	if (argc == 1 or argc > 3) {
@@ -20,11 +19,11 @@ int main(int argc, char ** argv) {
 	long long *A = new long long[n];
 	long long *B = new long long[n];
 	int *mf = new int[n];
-	cilk_for(long long i = 0; i < n; i++) {
+	parallel_for(0, n, [&](size_t i) {
 		A[i] = i;
 		B[i] = 0;
-	}
-	cilk_for(long long i = 0; i < n; i++) mf[i] = 0;
+	});
+	parallel_for(0, n, [&](size_t i) { mf[i] = 0; });
 	auto p = [&](int x) {return (x & 3) != 3; };
 	long long m0;
 	m0 = sequence::filter(A, B, n, p);
@@ -50,47 +49,53 @@ int main(int argc, char ** argv) {
 	long long m1;
 
 	double time = 0;
-	cilk_for(long long j = 0; j < n; j++)
+	parallel_for(0, n, [&](size_t j) {
 		A[j] = j;
-
+	});
 	m1 = sequence::in_place_filter(A, n, p, false);
 	if (m0 != m1) {
 		std::cout << "wrong" << std::endl;
 	}
 	else {
-		cilk_for(long long i = 0; i < m0; i++) {
+		parallel_for(0, m0, [&](size_t i) {
 			if (B[i] != A[i]) {
 				std::cout << i << " wrong" << std::endl;
 			}
-		}
+		});
 	}
-	cilk_for(long long j = 0; j < n; j++)
+	parallel_for(0, n, [&](size_t j) {
 		A[j] = j;
+	});
 	startTime();
 	m1 = sequence::in_place_filter(A, n, p, false);
 	nextTime();
-	cilk_for(long long j = 0; j < n; j++)
+	parallel_for(0, n, [&](size_t j) {
 		A[j] = j;
+	});
 	startTime();
 	m1 = sequence::in_place_filter(A, n, p, false);
 	nextTime();
-	cilk_for(long long j = 0; j < n; j++)
+	parallel_for(0, n, [&](size_t j) {
 		A[j] = j;
+	});
 	startTime();
 	m1 = sequence::in_place_filter(A, n, p, false);
 	nextTime();
-	cilk_for(long long j = 0; j < n; j++)
+	parallel_for(0, n, [&](size_t j) {
 		A[j] = j;
+	});
 	startTime();
 	m1 = sequence::in_place_filter(A, n, p, false);
 	nextTime();
-	cilk_for(long long j = 0; j < n; j++)
+	parallel_for(0, n, [&](size_t j) {
 		A[j] = j;
+	});
 	startTime();
 	m1 = sequence::in_place_filter(A, n, p, false);
 	nextTime();
-	cilk_for(long long j = 0; j < n; j++)
+	parallel_for(0, n, [&](size_t j) {
 		A[j] = j;
+	});
 	startTime();
 	m1 = sequence::in_place_filter(A, n, p, false);
 	nextTime();

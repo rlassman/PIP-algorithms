@@ -81,17 +81,19 @@ void randPerm(E *A, intT n, intT r) {
   //intT *check = newA(intT,n);
   pairInt* dataCheck = newA(pairInt,n);
 
-  {parallel_for (intT i=0; i < n; i++) {
+  {parallel_for (0, n, [&](size_t i) {
       //H[i] = utils::hash(i)%(i+1);
       H[i] =i+hashI(i)%(n-i);
     dataCheck[i] = make_pair(A[i],i);
-    }}
+    }); }
 
   randPermStep<E> rStep(H, dataCheck);
   speculative_for1(rStep, 0, n, (r != -1) ? r : 50, 0);
 
-  {parallel_for (intT i=0;i<n;i++) A[i] = dataCheck[i].first;}
-
+  { parallel_for (0, n, [&](size_t i) {
+    A[i] = dataCheck[i].first;
+  }); }
+  
   free(H); free(dataCheck);
 }
 

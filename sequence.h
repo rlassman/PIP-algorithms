@@ -29,6 +29,7 @@
 #include "utils.h"
 #include "math.h"
 #include "parlay/parallel.h"
+
 // For fast popcount
 #include <immintrin.h>
 #include <x86intrin.h>
