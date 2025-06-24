@@ -28,8 +28,7 @@
 #include "gettime.h"
 #include "utils.h"
 #include "math.h"
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
+
 // For fast popcount
 #include <immintrin.h>
 #include <x86intrin.h>

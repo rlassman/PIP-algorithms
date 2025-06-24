@@ -61,21 +61,21 @@ void listRanking(node *A, intT n, intT r = -1) {
 
 void timeListRanking(node* A, intT n, int rounds, intT ratio) {
   node* B = newA(node,n);
-  parallel_for(intT i=0;i<n;i++) {
+  parallel_for(0, n, [&](size_t i) {
     B[i].prev = A[i].prev;
     B[i].next = A[i].next;
-  }
+  });
   listRanking(B, n, ratio);
   double time=0;
   for (int i=0; i < rounds; i++) {
-    parallel_for(intT i=0;i<n;i++) {
+    parallel_for(0, n, [&](size_t i) {
       B[i].prev = A[i].prev;
       B[i].next = A[i].next;
-    }
+    });
     startTime();
     listRanking(B, n, ratio);
     nextTime();
-    }
+  }
   std::cout <<time<< endl;
   free(B);
 }
@@ -93,7 +93,9 @@ int main(int argc, char* argv[]) {
   intT n = atoi(P.getArgument(0));
   //intT numLists = min(n,P.getOptionIntValue("-l",1));
   intT* A = newA(intT,n);
-  parallel_for(intT i=0;i<n;i++) A[i] = i;
+  parallel_for(0, n, [&](size_t i) {
+    A[i] = i;
+  });
   randPerm(A, n, -1);
   std::cout<<rounds<<endl;
   bool* processed = newArray(n,(bool)0);
@@ -122,13 +124,15 @@ int main(int argc, char* argv[]) {
 
   //for(int i=0;i<n;i++)cout<<A[i]<<" ";cout<<endl;
   node* nodes = newA(node,n);
-  parallel_for(intT i=0;i<n;i++) nodes[i].next = nodes[i].prev = n;
-  parallel_for(intT i=0;i<n;i++) {
+  parallel_for(0, n, [&](size_t i) {
+    nodes[i].next = nodes[i].prev = n;
+  });
+  parallel_for(0, n, [&](size_t i) {
     if(A[i] != i) { 
       nodes[i].next = A[i];
       nodes[A[i]].prev = i;
     }
-  }
+  });
   
   //last node of list has next = n, first node of list has prev = n
 

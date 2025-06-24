@@ -1,8 +1,6 @@
 #include <iostream>
 #include <cstdio>
 #include <stdlib.h>
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
 #include "get_time.h"
 #include "sequence.h"
 #include "parallel.h"
@@ -25,11 +23,13 @@ int main(int argc,char ** argv){
     long long * A=new long long[n];
     long long* B=new long long[n];
     int *mf=new int[n];
-    parallel_for(int i=0;i<n;i++) {
+    parallel_for(0, n, [&](size_t i) {
         A[i]=i;
         B[i]=0;
-    }
-    parallel_for(int i=0;i<n;i++) mf[i]=0;
+    });
+    parallel_for(0, n, [&](size_t i) {
+        mf[i]=0;
+    });
     timer t0; t0.start();
     sequence::scan(A,B,n,plus<int>(),0);
     t0.stop();
