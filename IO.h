@@ -78,7 +78,7 @@ namespace benchIO {
 
     // pointer to each start of word
     char **SA = newA(char*, m);
-    parallel_for (0, m, [&](size_t i) {
+    parallel_for (0, m, [&](size_t j) {
      SA[j] = Str+offsets[j];
     });
     free(offsets); free(FL);
