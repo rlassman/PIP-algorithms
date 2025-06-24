@@ -54,8 +54,9 @@ intT speculative_for(S step, intT s, intT e, int granularity,
   S *state;
   if (hasState) {
     state = newA(S, maxRoundSize);
-    parallel_for (intT i=0; i < maxRoundSize; i++) 
+    parallel_for (0, maxRoundSize, [&](size_t i){
       state[i] = step;
+    });
   }
 
   int round = 0; 
@@ -77,25 +78,27 @@ intT speculative_for(S step, intT s, intT e, int granularity,
 	//cout << round << ' ' << numberDone << ' ' << numberDone-prevdone << ' ' << totalProcessed << ' ' << size << endl;
 
     if (hasState) {
-      parallel_for (intT i =0; i < size; i++) {/////////////////
-	if (i >= numberKeep) I[i] = numberDone + i;
-	keep[i] = state[i].reserve(I[i], i);
-      } 
+      parallel_for (0, size, [&](size_t i){
+        if (i >= numberKeep) I[i] = numberDone + i;
+      	keep[i] = state[i].reserve(I[i], i);
+      });
     } else {
-      parallel_for (intT i =0; i < size; i++) {
-	if (i >= numberKeep) I[i] = numberDone + i;
-	keep[i] = step.reserve(I[i], i);
-      } 
+      parallel_for (0, size, [&](size_t i){
+        if (i >= numberKeep) I[i] = numberDone + i;
+      	keep[i] = step.reserve(I[i], i);
+      });
     }
 
 //    nextTimeN();
 
     if (hasState) {
-      parallel_for (intT i =0; i < size; i++) 
-	if (keep[i]) keep[i] = !state[i].commit(I[i], i);
+      parallel_for (0, size, [&](size_t i) {
+        if (keep[i]) keep[i] = !state[i].commit(I[i], i);
+      });
     } else {
-      parallel_for (intT i =0; i < size; i++) 
-	if (keep[i]) keep[i] = !step.commit(I[i], i);
+      parallel_for (0, size, [&](size_t i){
+        if (keep[i]) keep[i] = !step.commit(I[i], i);
+      });
     }
 	
     // keep iterations that failed for next round
