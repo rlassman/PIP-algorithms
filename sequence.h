@@ -28,8 +28,7 @@
 #include "gettime.h"
 #include "utils.h"
 #include "math.h"
-#include <cilk/cilk.h>
-#include <cilk/cilk_api.h>
+#include "parlay/parallel.h"
 // For fast popcount
 #include <immintrin.h>
 #include <x86intrin.h>
@@ -39,7 +38,9 @@ using namespace std;
 #define _BSIZE 2048
 #define _SCAN_LOG_BSIZE 10
 #define _SCAN_BSIZE (1 << _SCAN_LOG_BSIZE)
-#define parallel_for cilk_for
+// #define parallel_for(par_lo, par_hi, par_body) \
+//     parlay::parallel_for(par_lo, par_hi, par_body)
+
 template <class T>
 struct _seq {
   T* A;
@@ -51,7 +52,9 @@ struct _seq {
 
 template <class E>
 void brokenCompiler__(intT n, E* x, E v) {
-  parallel_for(intT i=0; i<n; i++) x[i] = v;
+  parallel_for(0, n, [&](size_t i){
+	x[i] = v;
+  });
 }
 
 template <class E>
@@ -89,9 +92,9 @@ namespace sequence {
 
 #define granular_for(_i, _st, _ne, _thresh, _body) { \
   if ((_ne - _st) > _thresh) { \
-    {parallel_for(intT _i=_st; _i < _ne; _i++) { \
-      _body \
-    }} \
+    {parallel_for(_st, _ne, [&](size_t i){
+		_body
+	});} \
   } else { \
     {for (intT _i=_st; _i < _ne; _i++) { \
       _body \
@@ -104,11 +107,11 @@ namespace sequence {
     intT _ee = _e;					\
     intT _n = _ee-_ss;					\
     intT _l = nblocks(_n,_bsize);			\
-    parallel_for (intT _i = 0; _i < _l; _i++) {		\
-      intT _s = _ss + _i * (_bsize);			\
-      intT _e = min(_s + (_bsize), _ee);			\
-      _body						\
-	}						\
+    parallel_for(0, _l, [&](size_t i){
+		intT _s = _ss + _i * (_bsize);			\
+      	intT _e = min(_s + (_bsize), _ee);			\
+      	_body
+	});						\
   }
 
 	template <class OT, class intT, class F, class G>
@@ -607,7 +610,9 @@ namespace sequence {
 		if (n < _F_BSIZE)
 			return filterSerial(In, Out, n, p);
 		bool *Fl = newA(bool, n);
-		parallel_for(intT i = 0; i < n; i++) Fl[i] = (bool)p(In[i]);
+		parallel_for(0, n, [&](size_t i){
+			Fl[i] = (bool)p(In[i]);
+		});
 		intT  m = pack(In, Out, Fl, n);
 		free(Fl);
 		return m;
@@ -618,7 +623,9 @@ namespace sequence {
 	intT filter(ET* In, ET* Out, bool* Fl, intT n, PRED p) {
 		if (n < _F_BSIZE)
 			return filterSerial(In, Out, n, p);
-		parallel_for(intT i = 0; i < n; i++) Fl[i] = (bool)p(In[i]);
+		parallel_for(0, n, [&](size_t i){
+			Fl[i] = (bool)p(In[i]);
+		});
 		intT  m = pack(In, Out, Fl, n);
 		return m;
 	}
@@ -626,7 +633,9 @@ namespace sequence {
 	template <class ET, class intT, class PRED>
 	_seq<ET> filter(ET* In, intT n, PRED p) {
 		bool *Fl = newA(bool, n);
-		parallel_for(intT i = 0; i < n; i++) Fl[i] = (bool)p(In[i]);
+		parallel_for(0, n, [&](size_t i){
+			Fl[i] = (bool)p(In[i]);
+		});
 		_seq<ET> R = pack(In, Fl, n);
 		free(Fl);
 		return R;
@@ -642,23 +651,23 @@ namespace sequence {
 		intT l = nblocks(n, b);
 		b = nblocks(n, l);
 		intT *Sums = newA(intT, l + 1);
-		{parallel_for(intT i = 0; i < l; i++) {
+		{parallel_for(0, l, [&](size_t i){
 			intT s = i * b;
 			intT e = min(s + b, n);
 			intT k = s;
 			for (intT j = s; j < e; j++)
 				if (p(In[j])) In[k++] = In[j];
 			Sums[i] = k - s;
-		}}
+		});}
 		intT m = plusScan(Sums, Sums, l);
 		Sums[l] = m;
-		{parallel_for(intT i = 0; i < l; i++) {
+		{parallel_for(0, l, [&](size_t i){
 			ET* I = In + i*b;
 			ET* O = Out + Sums[i];
 			for (intT j = 0; j < Sums[i + 1] - Sums[i]; j++) {
 				O[j] = I[j];
 			}
-		}}
+		});}
 		free(Sums);
 		return m;
 	}
@@ -689,7 +698,7 @@ namespace sequence {
 		//startTime();
 
 		intT *Sums = newA(intT, l + 1);
-		{parallel_for(intT i = 0; i < l; i++) {
+		{parallel_for(0, l, [&](size_t i){
 			intT s = i * b;
 			intT e = min(s + b, n);
 			intT k = s;
@@ -701,7 +710,7 @@ namespace sequence {
 					if (p(In[j])) In[k++] = In[j];
 				Sums[i] = k - s;
 			}
-		}}
+		});}
 		intT m = plusScan(Sums, Sums, l);
 		Sums[l] = m;
 
@@ -712,14 +721,14 @@ namespace sequence {
 			intT startplace = b * startblock;
 			intT endblock = binary_search(Sums, startplace, startblock, l);
 			//cout << startblock << ' ' << endblock << endl;
-			parallel_for(intT i = startblock; i <= endblock; i++) {
+			parallel_for(startblock, endblock + 1, [&](size_t i){
 				intT S = i*b;
 				intT D = Sums[i];
 				intT L = Sums[i + 1] - D;
 				for (intT j = 0; j < L; j++) {
 					In[D + j] = In[S + j];
 				}
-			}
+			});
 			startblock = endblock + 1;
 			//reportTime();
 		}
@@ -739,10 +748,13 @@ namespace sequence {
 		}
 
 		intT mid = (s + t) / 2;
-		ET left = cilk_spawn inplace_upsweep(A, s, mid);
-		ET right = inplace_upsweep(A, mid + 1, t);
+		ET left, right;
 
-		cilk_sync;
+		parlay::parallel_do(
+			[&]() {left = inplace_upsweep(A, s, mid);},
+			[&]() {right = inplace_upsweep(A, mid + 1, t);}
+		);
+
 		right += left;
 		A[t] = right;
 		return right;
@@ -762,9 +774,11 @@ namespace sequence {
 
 		intT mid = (s + t) / 2;
 		ET temp = A[mid];
-		cilk_spawn inplace_downsweep(A, s, mid, p);
-		inplace_downsweep(A, mid + 1, t, p + temp);
-		cilk_sync;
+
+		parlay::parallel_do(
+			[&]() {inplace_downsweep(A, s, mid, p);},
+			[&]() {inplace_downsweep(A, mid + 1, t, p + temp);}
+		);
 	}
 
 	template <class ET, class intT>
