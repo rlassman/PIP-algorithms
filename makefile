@@ -2,7 +2,6 @@ LINKER ?= g++
 CC ?= gcc
 CXX ?= g++
 CFLAGS_BASE = -Wall -Wextra 
-CFLAGS_CILK = -DCILK -fcilkplus
 CFLAGS_GTEST = -lgtest_main -lgtest -lpthread
 
 ifeq ($(MODE),RELEASE)
@@ -11,12 +10,12 @@ else ifeq ($(MODE),DEBUG)
 	CFLAGS_OPT += -O0 -g3
 endif
 
-LDFLAGS := -lcilkrts
-CFLAGS := $(CFLAGS_BASE) $(CFLAGS_CILK) $(CFLAGS_OPT)
+CFLAGS := $(CFLAGS_BASE) $(CFLAGS_OPT)
 CXXFLAGS := $(CFLAGS) -std=c++11
 
 ########### Change the test cases here ###########
-ITEM_SRC = scan.cpp filter.cpp listRanking-pbbs.C listRanking-pip.C treeContraction-pbbs.C treeContraction-pip.C
+#ITEM_SRC = scan.cpp filter.cpp listRanking-pbbs.C listRanking-pip.C treeContraction-pbbs.C treeContraction-pip.C
+ITEM_SRC = filter.cpp 
 ##################################################
 ITEM_TEST := $(ITEM_SRC:%.C=%)
 ITEM_TEST := $(ITEM_TEST:%.cpp=%)
