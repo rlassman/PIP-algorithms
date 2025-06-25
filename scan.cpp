@@ -14,16 +14,10 @@ int main(int argc, char ** argv) {
 	for (long long i = 0; i < n; i++) {
 		A[i] = i;
 	}
-	sequence::my_inplace_scan(A, n);
-	startTime();
-	sequence::my_inplace_scan(A, n);
-	nextTime();
-	startTime();
-	sequence::my_inplace_scan(A, n);
-	nextTime();
-	startTime();
-	sequence::my_inplace_scan(A, n);
-	nextTime();
+	sequence::inplace_scan(A, n);
+	sequence::inplace_scan(A, n);
+	sequence::inplace_scan(A, n);
+	sequence::inplace_scan(A, n);
 
 	delete[]A;
 	return 0;
